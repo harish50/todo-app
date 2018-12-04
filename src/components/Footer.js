@@ -2,7 +2,7 @@ import React,{Component} from 'react';
 
 class Footer extends Component{
     render(){
-        let clearCompleted = this.props.activeTasksCount ? <li><button>Clear Completed</button></li>:<div></div>;
+        let clearCompleted = this.props.activeTasksCount ? <li><button onClick={this.props.clearCompleted}>Clear Completed</button></li>:<div></div>;
         return(
             <footer>
                 <ul>

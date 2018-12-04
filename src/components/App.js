@@ -16,6 +16,7 @@ class App extends Component {
         this.handleShown = this.handleShown.bind(this);
         this.handleToggle = this.handleToggle.bind(this);
         this.activeTasksCount = this.activeTasksCount.bind(this);
+        this.clearCompleted = this.clearCompleted.bind(this);
     }
 
     addTask(newTask) {
@@ -49,6 +50,14 @@ class App extends Component {
         })
         return completedCount;
     }
+
+    clearCompleted(){
+        let allTasks=this.state.tasks.filter(function (task){
+            return !task.isCompleted;
+        });
+        this.setState({tasks:allTasks});
+    }
+
     render() {
         let allTasks = this.state.tasks;
         let nowShown = this.state.nowShowing;
@@ -77,7 +86,11 @@ class App extends Component {
                     addTask={this.addTask}
                 />
                 {todoList}
-                <Footer activeTasksCount={this.activeTasksCount()} handleShown={this.handleShown}/>
+                <Footer
+                    activeTasksCount={this.activeTasksCount()}
+                    handleShown={this.handleShown}
+                    clearCompleted={this.clearCompleted}
+                />
             </div>
         );
     }
