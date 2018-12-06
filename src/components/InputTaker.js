@@ -16,7 +16,7 @@ class InputTaker extends Component {
                 const newTask = {
                     taskName: this.state.taskName,
                     isCompleted: false
-                }
+                };
                 this.setState({taskName: ''});
                 this.props.addTask(newTask);
             }
@@ -30,8 +30,14 @@ class InputTaker extends Component {
     render() {
         return (
             <div>
-                <input type="text" value={this.state.taskName} placeholder={"what needs to be done?"}
-                       onChange={this.handleChange} onKeyDown={this.keyPress}/>
+                <input
+                    className={"new-todo"}
+                    type="text"
+                    value={this.state.taskName}
+                    placeholder={"what needs to be done?"}
+                    onChange={this.handleChange}
+                    onKeyDown={this.keyPress}
+                />
             </div>
         );
     }

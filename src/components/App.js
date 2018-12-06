@@ -3,7 +3,9 @@ import Header from './Header';
 import InputTaker from './InputTaker';
 import ToDoItem from './ToDoItem';
 import Footer from './Footer';
+import database from './Firebase';
 import '../styles/App.css';
+
 
 class App extends Component {
     constructor(props) {
@@ -15,47 +17,62 @@ class App extends Component {
         this.addTask = this.addTask.bind(this);
         this.handleShown = this.handleShown.bind(this);
         this.handleToggle = this.handleToggle.bind(this);
-        this.activeTasksCount = this.activeTasksCount.bind(this);
+        this.completedTasksCount = this.completedTasksCount.bind(this);
         this.clearCompleted = this.clearCompleted.bind(this);
+        this.deleteTask = this.deleteTask.bind(this);
+        this.toggleAll = this.toggleAll.bind(this);
+    }
+
+    componentDidMount() {
+        const tasksRef = database.ref('tasks');
+        tasksRef.on('value', snapshot => {
+            let tasks = [];
+            snapshot.forEach(task => {
+                let newTask = task.val();
+                newTask.key = task.key;
+                tasks.push(newTask);
+            });
+            this.setState({tasks: tasks});
+        }).bind(this);
     }
 
     addTask(newTask) {
-        let previousTasks = this.state.tasks.slice();
-        newTask['id'] = this.state.tasks.length;
-        previousTasks.push(newTask);
-        this.setState({tasks: previousTasks});
+        const tasksRef = database.ref('tasks');
+        tasksRef.push(newTask);
     }
 
     handleShown(action) {
         this.setState({nowShowing: action.target.textContent});
     }
 
-    handleToggle(todo) {
-        let taskIndex= this.state.tasks.indexOf(todo);
-        console.log(taskIndex);
-        let tasks = this.state.tasks.slice(0,taskIndex);
-        let tasks1= this.state.tasks.slice(taskIndex+1);
-        todo.isCompleted = !todo.isCompleted;
-        tasks.push(todo);
-        tasks.push(...tasks1);
-        this.setState({tasks: [...tasks]});
+    handleToggle(task) {
+        const tasksRef = database.ref('tasks');
+        tasksRef.child(task.key).child('isCompleted').set(!task.isCompleted);
     }
 
-    activeTasksCount(){
-        let completedCount=0;
-        this.state.tasks.map(task=>{
-            if(task.isCompleted){
-                completedCount+=1;
+    completedTasksCount() {
+        let completedCount = 0;
+        this.state.tasks.map(task => {
+            if (task.isCompleted) {
+                completedCount += 1;
             }
         })
         return completedCount;
     }
 
-    clearCompleted(){
-        let allTasks=this.state.tasks.filter(function (task){
-            return !task.isCompleted;
+    deleteTask(taskKey) {
+        const tasksRef = database.ref('tasks');
+        tasksRef.update({[taskKey]: null});
+    }
+
+    clearCompleted() {
+        let deleteTask = this.deleteTask;
+        this.state.tasks.map(function (task) {
+            if (task.isCompleted) {
+                deleteTask(task.key);
+            }
+            ;
         });
-        this.setState({tasks:allTasks});
     }
 
     render() {
@@ -74,20 +91,30 @@ class App extends Component {
         );
         let todoList = shownTasks.map(task =>
             <ToDoItem
-                key={task.id}
+                key={task.key}
                 task={task}
                 handleToggle={this.handleToggle}
+                deleteTask={this.deleteTask}
             />
         );
+        let completedTasksCount = this.completedTasksCount();
+        let activeTasksCount = this.state.tasks.length - completedTasksCount;
         return (
-            <div>
-                <Header/>
-                <InputTaker
-                    addTask={this.addTask}
-                />
-                {todoList}
+            <div className={"todoapp"}>
+                <header className={"header"}>
+                    <Header/>
+                    <InputTaker
+                        addTask={this.addTask}
+                    />
+                </header>
+                <section className={"main"}>
+                    <ul className={"todo-list"}>
+                        {todoList}
+                    </ul>
+                </section>
                 <Footer
-                    activeTasksCount={this.activeTasksCount()}
+                    completedTasksCount={completedTasksCount}
+                    activeTasksCount={activeTasksCount}
                     handleShown={this.handleShown}
                     clearCompleted={this.clearCompleted}
                 />
