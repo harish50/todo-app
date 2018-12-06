@@ -75,6 +75,22 @@ class App extends Component {
         });
     }
 
+    toggleAll(){
+        const tasksRef = database.ref('tasks');
+        if(this.state.tasks.length!==this.completedTasksCount()) {
+            this.state.tasks.map(task => {
+                if (!task.isCompleted) {
+                    tasksRef.child(task.key).child('isCompleted').set(true);
+                }
+            });
+        }
+        else {
+            this.state.tasks.map(task => {
+                    tasksRef.child(task.key).child('isCompleted').set(!task.isCompleted);
+            });
+        }
+    }
+
     render() {
         let allTasks = this.state.tasks;
         let nowShown = this.state.nowShowing;
@@ -99,6 +115,13 @@ class App extends Component {
         );
         let completedTasksCount = this.completedTasksCount();
         let activeTasksCount = this.state.tasks.length - completedTasksCount;
+        let toggleall = this.state.tasks.length>0 ? <input
+            id={"toggle-all"}
+            className={"toggle-all"}
+            type={"checkbox"}
+            checked={activeTasksCount>0?false:true}
+            onChange={this.toggleAll}
+        />:"";
         return (
             <div className={"todoapp"}>
                 <header className={"header"}>
@@ -108,6 +131,8 @@ class App extends Component {
                     />
                 </header>
                 <section className={"main"}>
+                    {toggleall}
+                    <label htmlFor={"toggle-all"}></label>
                     <ul className={"todo-list"}>
                         {todoList}
                     </ul>
