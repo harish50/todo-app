@@ -12,12 +12,13 @@ class App extends Component {
         super(props);
         this.state = {
             tasks: [],
-            nowShowing: 'All'
+            nowShowing: 'All',
+            completedTasksCount: 0,
+            activeTasksCount: 0
         };
         this.addTask = this.addTask.bind(this);
         this.handleShown = this.handleShown.bind(this);
         this.handleToggle = this.handleToggle.bind(this);
-        this.completedTasksCount = this.completedTasksCount.bind(this);
         this.clearCompleted = this.clearCompleted.bind(this);
         this.deleteTask = this.deleteTask.bind(this);
         this.toggleAll = this.toggleAll.bind(this);
@@ -26,13 +27,25 @@ class App extends Component {
     componentDidMount() {
         const tasksRef = database.ref('tasks');
         tasksRef.on('value', snapshot => {
-            let tasks = [];
+            let newTasks = [];
+            let completedTaskCount = 0;
+            let activeTaskCount = 0;
             snapshot.forEach(task => {
                 let newTask = task.val();
                 newTask.key = task.key;
-                tasks.push(newTask);
+                newTasks.push(newTask);
+                if (newTask.isCompleted) {
+                    completedTaskCount += 1;
+                }
+                else {
+                    activeTaskCount += 1;
+                }
             });
-            this.setState({tasks: tasks});
+            this.setState({
+                tasks: newTasks,
+                activeTasksCount: activeTaskCount,
+                completedTasksCount: completedTaskCount
+            });
         }).bind(this);
     }
 
@@ -50,16 +63,6 @@ class App extends Component {
         tasksRef.child(task.key).child('isCompleted').set(!task.isCompleted);
     }
 
-    completedTasksCount() {
-        let completedCount = 0;
-        this.state.tasks.map(task => {
-            if (task.isCompleted) {
-                completedCount += 1;
-            }
-        })
-        return completedCount;
-    }
-
     deleteTask(taskKey) {
         const tasksRef = database.ref('tasks');
         tasksRef.update({[taskKey]: null});
@@ -67,17 +70,16 @@ class App extends Component {
 
     clearCompleted() {
         let deleteTask = this.deleteTask;
-        this.state.tasks.map(function (task) {
+        this.state.tasks.map(task => {
             if (task.isCompleted) {
                 deleteTask(task.key);
             }
-            ;
         });
     }
 
-    toggleAll(){
+    toggleAll() {
         const tasksRef = database.ref('tasks');
-        if(this.state.tasks.length!==this.completedTasksCount()) {
+        if (this.state.activeTasksCount) {
             this.state.tasks.map(task => {
                 if (!task.isCompleted) {
                     tasksRef.child(task.key).child('isCompleted').set(true);
@@ -86,15 +88,15 @@ class App extends Component {
         }
         else {
             this.state.tasks.map(task => {
-                    tasksRef.child(task.key).child('isCompleted').set(!task.isCompleted);
+                tasksRef.child(task.key).child('isCompleted').set(!task.isCompleted);
             });
         }
     }
 
-    render() {
+    getTodoList() {
         let allTasks = this.state.tasks;
         let nowShown = this.state.nowShowing;
-        const shownTasks = allTasks.filter(function (task) {
+        const shownTasks = allTasks.filter(task => {
                 switch (nowShown) {
                     case "Active":
                         return !task.isCompleted;
@@ -113,15 +115,17 @@ class App extends Component {
                 deleteTask={this.deleteTask}
             />
         );
-        let completedTasksCount = this.completedTasksCount();
-        let activeTasksCount = this.state.tasks.length - completedTasksCount;
-        let toggleall = this.state.tasks.length>0 ? <input
+        return todoList;
+    }
+
+    render() {
+        let toggleall = this.state.tasks.length > 0 ? <input
             id={"toggle-all"}
             className={"toggle-all"}
             type={"checkbox"}
-            checked={activeTasksCount>0?false:true}
+            checked={this.state.activeTasksCount > 0 ? false : true}
             onChange={this.toggleAll}
-        />:"";
+        /> : "";
         return (
             <div className={"todoapp"}>
                 <header className={"header"}>
@@ -134,12 +138,12 @@ class App extends Component {
                     {toggleall}
                     <label htmlFor={"toggle-all"}></label>
                     <ul className={"todo-list"}>
-                        {todoList}
+                        {this.getTodoList()}
                     </ul>
                 </section>
                 <Footer
-                    completedTasksCount={completedTasksCount}
-                    activeTasksCount={activeTasksCount}
+                    completedTasksCount={this.state.completedTasksCount}
+                    activeTasksCount={this.state.activeTasksCount}
                     handleShown={this.handleShown}
                     clearCompleted={this.clearCompleted}
                 />
