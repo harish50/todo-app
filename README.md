@@ -1,4 +1,4 @@
-# ToDoApplication
+# **ToDoApplication**
 
 This is simple todo application which uses reactjs, webpack, firebase
 
